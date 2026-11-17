@@ -62,7 +62,7 @@ func main() {
 }
 ```
 
-The library names no default model. Set `Model` on the request, or set `Config.Model` once for every request that leaves it empty. A request with neither fails before it is sent.
+The library names no model and reads none from the environment. Set `Model` on the request, or set `Config.Model` once for every request that leaves it empty. A request with neither fails before it is sent.
 
 `Stream` takes the same request and passes each text delta to a callback. A `Schema` on the request returns JSON that `Response.Decode` unmarshals.
 
@@ -94,13 +94,10 @@ tracing.Cost = func(model, serviceTier string, u aitrace.Usage) (total, webSearc
 | --- | --- | --- |
 | `OPENAI_API_KEY` | `openai.ConfigFromEnv` | yes |
 | `OPENAI_BASE_URL` | `openai.ConfigFromEnv` | no |
-| `OPENAI_MODEL` | `openai.ConfigFromEnv` | no, becomes `Config.Model` |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini.ConfigFromEnv` | yes |
 | `GOOGLE_GENERATIVE_AI_BASE_URL` | `gemini.ConfigFromEnv` | no |
-| `GOOGLE_GENERATIVE_AI_MODEL` | `gemini.ConfigFromEnv` | no, becomes `Config.Model` |
 | `XAI_API_KEY` | `xai.ConfigFromEnv` | yes |
 | `XAI_BASE_URL` | `xai.ConfigFromEnv` | no |
-| `XAI_MODEL` | `xai.ConfigFromEnv` | no, becomes `Config.Model` |
 | `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | `aitrace.ConfigFromEnv` | tracing is off without all three |
 
 ## License

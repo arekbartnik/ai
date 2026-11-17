@@ -29,7 +29,6 @@ func ConfigFromEnv() (Config, error) {
 	c := Config{
 		APIKey:  os.Getenv("XAI_API_KEY"),
 		BaseURL: strings.TrimSuffix(os.Getenv("XAI_BASE_URL"), "/"),
-		Model:   os.Getenv("XAI_MODEL"),
 	}
 	if c.APIKey == "" {
 		return c, errors.New("missing xAI configuration: XAI_API_KEY")

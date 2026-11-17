@@ -35,7 +35,6 @@ func ConfigFromEnv() (Config, error) {
 	c := Config{
 		APIKey:  os.Getenv("GOOGLE_GENERATIVE_AI_API_KEY"),
 		BaseURL: strings.TrimSuffix(os.Getenv("GOOGLE_GENERATIVE_AI_BASE_URL"), "/"),
-		Model:   os.Getenv("GOOGLE_GENERATIVE_AI_MODEL"),
 	}
 	if c.APIKey == "" {
 		return c, errors.New("missing Gemini configuration: GOOGLE_GENERATIVE_AI_API_KEY")

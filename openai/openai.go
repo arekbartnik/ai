@@ -35,7 +35,6 @@ func ConfigFromEnv() (Config, error) {
 	c := Config{
 		APIKey:  os.Getenv("OPENAI_API_KEY"),
 		BaseURL: strings.TrimSuffix(os.Getenv("OPENAI_BASE_URL"), "/"),
-		Model:   os.Getenv("OPENAI_MODEL"),
 	}
 	if c.APIKey == "" {
 		return c, errors.New("missing OpenAI configuration: OPENAI_API_KEY")
