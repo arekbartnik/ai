@@ -26,26 +26,26 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/arekbartnik/ai/aitrace"
 	"github.com/arekbartnik/ai/openai"
 )
 
 func main() {
-	tracing := aitrace.ConfigFromEnv()
-	tracing.ServiceName = "my-service"
-	tracing.Environment = "production"
-	flush, err := aitrace.Install(tracing)
+	flush, err := aitrace.Install(aitrace.Config{
+		Host:        os.Getenv("LANGFUSE_HOST"),
+		PublicKey:   os.Getenv("LANGFUSE_PUBLIC_KEY"),
+		SecretKey:   os.Getenv("LANGFUSE_SECRET_KEY"),
+		ServiceName: "my-service",
+		Environment: "production",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer flush(context.Background())
 
-	config, err := openai.ConfigFromEnv()
-	if err != nil {
-		log.Fatal(err)
-	}
-	client := openai.New(config)
+	client := openai.New(openai.Config{APIKey: os.Getenv("OPENAI_API_KEY")})
 
 	ctx, end := aitrace.Root(context.Background(), "ai.example", aitrace.User("someone@example.com"))
 	resp, err := client.Generate(ctx, openai.Request{
@@ -62,7 +62,9 @@ func main() {
 }
 ```
 
-The library names no model and reads none from the environment. Set `Model` on the request, or set `Config.Model` once for every request that leaves it empty. A request with neither fails before it is sent.
+The library reads nothing from the environment. The application passes the API key, and may pass a `BaseURL` to reach the provider through a proxy.
+
+The library names no model either. Set `Model` on the request, or set `Config.Model` once for every request that leaves it empty. A request with neither fails before it is sent.
 
 `Stream` takes the same request and passes each text delta to a callback. A `Schema` on the request returns JSON that `Response.Decode` unmarshals.
 
@@ -70,14 +72,14 @@ The library names no model and reads none from the environment. Set `Model` on t
 
 `aitrace.Install` sets the global OpenTelemetry tracer provider. Without it the clients still work and record nothing.
 
-`ConfigFromEnv` reads only the Langfuse host and keys. The application sets `ServiceName` and `Environment` itself. An empty one is not sent.
+Tracing stays off unless `Config` has the Langfuse host and both keys. `ServiceName` and `Environment` are optional, and an empty one is not sent.
 
 `aitrace.Root` groups the calls made under its context into one trace. The trace starts with the first call, so a root without calls exports nothing. `Session`, `User` and `Metadata` build the attributes Langfuse reads.
 
-The library holds no prices. Set `Config.Cost` to price a call from its model, service tier and usage. Without it, or when it reports a model as unknown, the generation carries no cost and Langfuse falls back to its own prices.
+The library holds no prices. Pass a function as `Config.Cost` to price a call from its model, service tier and usage. Without it, or when it reports a model as unknown, the generation carries no cost and Langfuse falls back to its own prices.
 
 ```go
-tracing.Cost = func(model, serviceTier string, u aitrace.Usage) (total, webSearch float64, ok bool) {
+func cost(model, serviceTier string, u aitrace.Usage) (total, webSearch float64, ok bool) {
 	if model != "my-model" {
 		return 0, 0, false
 	}
@@ -87,18 +89,6 @@ tracing.Cost = func(model, serviceTier string, u aitrace.Usage) (total, webSearc
 ```
 
 `openai.Record` keeps every request sent under its context, with the wire payload and the outcome, for callers that store their own audit trail.
-
-## Environment
-
-| Variable | Used by | Required |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | `openai.ConfigFromEnv` | yes |
-| `OPENAI_BASE_URL` | `openai.ConfigFromEnv` | no |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini.ConfigFromEnv` | yes |
-| `GOOGLE_GENERATIVE_AI_BASE_URL` | `gemini.ConfigFromEnv` | no |
-| `XAI_API_KEY` | `xai.ConfigFromEnv` | yes |
-| `XAI_BASE_URL` | `xai.ConfigFromEnv` | no |
-| `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | `aitrace.ConfigFromEnv` | tracing is off without all three |
 
 ## License
 

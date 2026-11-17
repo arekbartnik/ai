@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -44,19 +43,12 @@ type Cost func(model, serviceTier string, u Usage) (total, webSearch float64, ok
 
 var cost Cost
 
-func ConfigFromEnv() Config {
-	return Config{
-		Host:      strings.TrimSuffix(os.Getenv("LANGFUSE_HOST"), "/"),
-		PublicKey: os.Getenv("LANGFUSE_PUBLIC_KEY"),
-		SecretKey: os.Getenv("LANGFUSE_SECRET_KEY"),
-	}
-}
-
 // Install sets the global tracer provider. The returned func flushes the
 // spans not yet exported.
 func Install(c Config) (func(context.Context) error, error) {
+	c.Host = strings.TrimSuffix(c.Host, "/")
 	if c.Host == "" || c.PublicKey == "" || c.SecretKey == "" {
-		slog.Info("AI tracing off", "reason", "LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY or LANGFUSE_SECRET_KEY is empty")
+		slog.Info("AI tracing off", "reason", "Host, PublicKey or SecretKey is empty")
 		return func(context.Context) error { return nil }, nil
 	}
 	exporter, err := otlptracehttp.New(context.Background(),

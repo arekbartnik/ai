@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"iter"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -23,23 +22,14 @@ const (
 	flexRetryDelay = 2 * time.Second
 )
 
+// Config is set by the caller. An empty BaseURL is DefaultBaseURL, and an
+// empty Model leaves the model to each Request.
 type Config struct {
 	APIKey      string
 	BaseURL     string
 	Model       string
 	Store       bool
 	ServiceTier string
-}
-
-func ConfigFromEnv() (Config, error) {
-	c := Config{
-		APIKey:  os.Getenv("OPENAI_API_KEY"),
-		BaseURL: strings.TrimSuffix(os.Getenv("OPENAI_BASE_URL"), "/"),
-	}
-	if c.APIKey == "" {
-		return c, errors.New("missing OpenAI configuration: OPENAI_API_KEY")
-	}
-	return c, nil
 }
 
 // APIError is a non-200 reply from OpenAI.
@@ -63,6 +53,7 @@ func New(c Config) *Client {
 	if c.BaseURL == "" {
 		c.BaseURL = DefaultBaseURL
 	}
+	c.BaseURL = strings.TrimSuffix(c.BaseURL, "/")
 	return &Client{model: c.Model, store: c.Store, serviceTier: c.ServiceTier, api: httpapi.Endpoint{
 		Provider:   "OpenAI",
 		URL:        c.BaseURL + "/v1/responses",

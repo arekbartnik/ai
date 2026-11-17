@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"iter"
-	"os"
 	"strings"
 
 	"github.com/arekbartnik/ai/aitrace"
@@ -18,22 +17,13 @@ const (
 	DefaultBaseURL = "https://api.x.ai"
 )
 
+// Config is set by the caller. An empty BaseURL is DefaultBaseURL, and an
+// empty Model leaves the model to each Request.
 type Config struct {
 	APIKey  string
 	BaseURL string
 	Model   string
 	Store   bool
-}
-
-func ConfigFromEnv() (Config, error) {
-	c := Config{
-		APIKey:  os.Getenv("XAI_API_KEY"),
-		BaseURL: strings.TrimSuffix(os.Getenv("XAI_BASE_URL"), "/"),
-	}
-	if c.APIKey == "" {
-		return c, errors.New("missing xAI configuration: XAI_API_KEY")
-	}
-	return c, nil
 }
 
 // APIError is a non-200 reply from xAI.
@@ -56,6 +46,7 @@ func New(c Config) *Client {
 	if c.BaseURL == "" {
 		c.BaseURL = DefaultBaseURL
 	}
+	c.BaseURL = strings.TrimSuffix(c.BaseURL, "/")
 	return &Client{model: c.Model, store: c.Store, api: httpapi.Endpoint{
 		Provider:   "xAI",
 		URL:        c.BaseURL + "/v1/responses",
