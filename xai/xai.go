@@ -301,12 +301,15 @@ func parse(body []byte) (Response, error) {
 	r.Usage.CachedTokens = w.Usage.InputTokensDetails.CachedTokens
 	r.Usage.ReasoningTokens = w.Usage.OutputTokensDetails.ReasoningTokens
 	r.Usage.WebSearchCalls = w.Usage.ServerSideToolUsageDetails.WebSearchCalls
+	// With server-side tools xAI can write a message, search, and write
+	// another. Each message is a whole answer (a whole JSON value under a
+	// Schema), so Text is the last non-empty one, never their concatenation.
 	seen := map[string]bool{}
-	var text strings.Builder
 	for _, item := range w.Output {
 		if item.Type != "message" {
 			continue
 		}
+		var text strings.Builder
 		for _, part := range item.Content {
 			if part.Type == "refusal" {
 				return Response{}, fmt.Errorf("xAI refused: %s", part.Refusal)
@@ -322,8 +325,10 @@ func parse(body []byte) (Response, error) {
 				}
 			}
 		}
+		if text.Len() > 0 {
+			r.Text = text.String()
+		}
 	}
-	r.Text = text.String()
 	if r.Text == "" {
 		return Response{}, errors.New("xAI response has no output text")
 	}
